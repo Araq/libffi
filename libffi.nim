@@ -10,8 +10,14 @@
 {.deadCodeElim: on.}
 
 when defined(windows):
+  import os
   # on Windows we don't use a DLL but instead embed libffi directly:
-  {.pragma: mylib, header: r"ffi.h".}
+
+  const thisPath = currentSourcePath.parentDir
+  const flag = "-I" & (thisPath / "common") & " -I" & thisPath
+  {.passC: flag.}
+
+  {.pragma: mylib, header: r"common/ffi.h".}
 
   #{.compile: r"common\malloc_closure.c".}
   {.compile: r"common\raw_api.c".}
