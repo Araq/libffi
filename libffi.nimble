@@ -1,9 +1,11 @@
-[Package]
-name          = "libffi"
-version       = "1.0.0"
+# Package
+version       = "1.0.1"
 author        = "Andreas Rumpf"
 description   = "libffi wrapper for Nim."
 license       = "MIT"
 
-[Deps]
-Requires: "nim >= 0.10.0"
+when defined(windows):
+  installExt     = @["nim", "c", "h", "s"]
+
+# Dependencies
+requires "nim >= 0.10.0"
