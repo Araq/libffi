@@ -124,7 +124,7 @@ type
   TCif* {.pure, final.} = object
     abi*: TABI
     nargs*: cuint
-    arg_types*: ptr ptr Type
+    argTypes*: ptr ptr Type
     rtype*: ptr Type
     bytes*: cuint
     flags*: cuint
@@ -135,18 +135,18 @@ type
     sint*: SArg
 {.deprecated: [TRaw: Raw].}
 
-proc raw_call*(cif: var Tcif; fn: proc () {.cdecl.}; rvalue: pointer;
+proc raw_call*(cif: var TCif; fn: proc () {.cdecl.}; rvalue: pointer;
                avalue: ptr Raw) {.cdecl, importc: "ffi_raw_call", mylib.}
-proc ptrarray_to_raw*(cif: var Tcif; args: ptr pointer; raw: ptr Raw) {.cdecl,
+proc ptrarray_to_raw*(cif: var TCif; args: ptr pointer; raw: ptr Raw) {.cdecl,
     importc: "ffi_ptrarray_to_raw", mylib.}
-proc raw_to_ptrarray*(cif: var Tcif; raw: ptr Raw; args: ptr pointer) {.cdecl,
+proc raw_to_ptrarray*(cif: var TCif; raw: ptr Raw; args: ptr pointer) {.cdecl,
     importc: "ffi_raw_to_ptrarray", mylib.}
-proc raw_size*(cif: var Tcif): int {.cdecl, importc: "ffi_raw_size", mylib.}
+proc raw_size*(cif: var TCif): int {.cdecl, importc: "ffi_raw_size", mylib.}
 
-proc prep_cif*(cif: var Tcif; abi: TABI; nargs: cuint; rtype: ptr Type;
+proc prep_cif*(cif: var TCif; abi: TABI; nargs: cuint; rtype: ptr Type;
                atypes: ptr ptr Type): Status {.cdecl, importc: "ffi_prep_cif",
     mylib.}
-proc call*(cif: var Tcif; fn: proc () {.cdecl.}; rvalue: pointer;
+proc call*(cif: var TCif; fn: proc () {.cdecl.}; rvalue: pointer;
            avalue: ptr pointer) {.cdecl, importc: "ffi_call", mylib.}
 
 # the same with an easier interface:
@@ -155,10 +155,10 @@ type
   ArgList* = array[0..100, pointer]
 {.deprecated: [TParamList: ParamList, TArgList: ArgList].}
 
-proc prep_cif*(cif: var Tcif; abi: TABI; nargs: cuint; rtype: ptr Type;
+proc prep_cif*(cif: var TCif; abi: TABI; nargs: cuint; rtype: ptr Type;
                atypes: ParamList): Status {.cdecl, importc: "ffi_prep_cif",
     mylib.}
-proc call*(cif: var Tcif; fn, rvalue: pointer;
+proc call*(cif: var TCif; fn, rvalue: pointer;
            avalue: ArgList) {.cdecl, importc: "ffi_call", mylib.}
 
 # Useful for eliminating compiler warnings
