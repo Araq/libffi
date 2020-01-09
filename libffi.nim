@@ -15,7 +15,7 @@ when defined(windows):
 
   const thisPath = currentSourcePath.parentDir
   const flag = "-I" & (thisPath / "common") & " -I" & thisPath
-  {.passC: flag.}
+  {.passc: flag.}
 
   {.pragma: mylib, header: r"common/ffi.h".}
 

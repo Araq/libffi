@@ -1,4 +1,4 @@
-# Compile with: nim c --passL:-rdynamic -r loader.nim
+# Compile with: nim c --passl:-rdynamic -r loader.nim
 import os
 import dynlib
 import libffi
