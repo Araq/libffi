@@ -1,5 +1,5 @@
 # Package
-version       = "1.0.1"
+version       = "1.0.2"
 author        = "Andreas Rumpf"
 description   = "libffi wrapper for Nim."
 license       = "MIT"
