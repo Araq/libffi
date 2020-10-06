@@ -161,5 +161,30 @@ proc prep_cif*(cif: var TCif; abi: TABI; nargs: cuint; rtype: ptr Type;
 proc call*(cif: var TCif; fn, rvalue: pointer;
            avalue: ArgList) {.cdecl, importc: "ffi_call", mylib.}
 
+
+when defined(x8664):
+  const TRAMPOLINE_SIZE = 24
+elif defined(windows) and defined(x86):
+  const TRAMPOLINE_SIZE = 52
+elif defined(amd64) and defined(windows):
+  const TRAMPOLINE_SIZE = 29
+else:
+  const TRAMPOLINE_SIZE = 10
+
+type
+  ClosureProc = proc (cif: var TCif, ret: pointer, args: UncheckedArray[pointer], user_data: pointer) {.cdecl.}
+  Closure* {.pure, final.} = object
+    tramp: array[0..TRAMPOLINE_SIZE, uint8]
+    cif: ptr TCif
+    fun: ClosureProc
+    user_data: pointer
+
+proc closure_alloc*(size: int, code: var pointer): ptr Closure {.cdecl, importc: "ffi_closure_alloc", mylib.}
+# same but taking care of the size
+template closure_alloc*(code: var pointer): ptr Closure =
+  closure_alloc(sizeof(ClosureProc), code)
+proc closure_free*(closure: ptr Closure) {.cdecl, importc: "ffi_closure_free", mylib.}
+proc prep_closure_loc*(closure: ptr Closure, cif: var TCif, fun: ClosureProc, user_data: pointer, codeloc: pointer): Status {.cdecl, importc: "ffi_prep_closure_loc", mylib.}
+
 # Useful for eliminating compiler warnings
 ##define FFI_FN(f) ((void (*)(void))f)
