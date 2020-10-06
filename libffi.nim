@@ -8,6 +8,8 @@
 #
 
 {.deadCodeElim: on.}
+when defined(nimHasStyleChecks):
+  {.push styleChecks: off.}
 
 when defined(windows):
   import os
@@ -188,3 +190,5 @@ proc prep_closure_loc*(closure: ptr Closure, cif: var TCif, fun: ClosureProc, us
 
 # Useful for eliminating compiler warnings
 ##define FFI_FN(f) ((void (*)(void))f)
+when defined(nimHasStyleChecks):
+  {.pop.} # {.push styleChecks: off.}
