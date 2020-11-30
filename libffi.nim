@@ -184,7 +184,7 @@ type
 proc closure_alloc*(size: int, code: var pointer): ptr Closure {.cdecl, importc: "ffi_closure_alloc", mylib.}
 # same but taking care of the size
 template closure_alloc*(code: var pointer): ptr Closure =
-  closure_alloc(sizeof(ClosureProc), code)
+  closure_alloc(sizeof(Closure), code)
 proc closure_free*(closure: ptr Closure) {.cdecl, importc: "ffi_closure_free", mylib.}
 proc prep_closure_loc*(closure: ptr Closure, cif: var TCif, fun: ClosureProc, user_data: pointer, codeloc: pointer): Status {.cdecl, importc: "ffi_prep_closure_loc", mylib.}
 
