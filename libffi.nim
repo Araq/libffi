@@ -46,7 +46,7 @@ when defined(windows):
 elif defined(macosx):
   {.pragma: mylib, dynlib: "libffi.dylib".}
 else:
-  {.pragma: mylib, dynlib: "libffi.so".}
+  {.pragma: mylib, dynlib: "libffi.so(.7|)".}
 
 type
   Arg* = int
