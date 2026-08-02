@@ -7,7 +7,7 @@
 #    distribution, for details about the copyright.
 #
 
-{.deadCodeElim: on.}
+
 when defined(nimHasStyleChecks):
   {.push styleChecks: off.}
 
@@ -142,20 +142,36 @@ proc prep_cif*(cif: var TCif; abi: TABI; nargs: cuint; rtype: ptr Type;
 proc call*(cif: var TCif; fn, rvalue: pointer;
            avalue: ArgList) {.cdecl, importc: "ffi_call", mylib.}
 
+template macOr[T](a, b: T): T =
+  when defined(macosx):
+    a
+  else:
+    b
 
-when defined(x8664):
-  const TRAMPOLINE_SIZE = 24
-elif defined(windows) and defined(x86):
-  const TRAMPOLINE_SIZE = 52
-elif defined(amd64) and defined(windows):
-  const TRAMPOLINE_SIZE = 29
+const TRAMPOLINE_SIZE = case hostCPU
+of "amd64": 24
+of "i386": 12
+of "arm":
+  macOr 12, 16
+elif defined(arm64):
+  macOr 16, 24
 else:
-  const TRAMPOLINE_SIZE = 10
+  -1  # unsupported
 
 type
   ClosureProc = proc (cif: var TCif, ret: pointer, args: UncheckedArray[pointer], user_data: pointer) {.cdecl.}
+
+when defined(arm) or defined(arm64):
+  #[ This means follows.
+        trampoline_table: pointer                         trampoline_table_entry: pointer
+  ]#
+  type Tramp = array[2, pointer]
+else:
+  type Tramp = array[0..TRAMPOLINE_SIZE, uint8]
+
+type
   Closure* {.pure, final.} = object
-    tramp: array[0..TRAMPOLINE_SIZE, uint8]
+    tramp: Tramp
     cif: ptr TCif
     fun: ClosureProc
     user_data: pointer
