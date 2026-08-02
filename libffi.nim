@@ -31,27 +31,55 @@ type
   Arg* = int
   SArg* = int
 {.deprecated: [TArg: Arg, TSArg: SArg].}
-
-when defined(windows) and defined(x86):
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, SYSV, STDCALL
-
-  const DEFAULT_ABI* = SYSV
-elif defined(amd64) and defined(windows):
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, WIN64
-  const DEFAULT_ABI* = WIN64
-else:
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, SYSV, UNIX64
-
-  when defined(i386):
-    const DEFAULT_ABI* = SYSV
+template arm32: bool = hostCPU == "arm"
+when defined(amd64):
+  when defined(windows):
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, WIN64, GNUW64, LAST_ABI
+  else:
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI = 1, UNIX64, WIN64, GNUW64, LAST_ABI
+  when defined(windows):
+    when defined(vcc):
+      const DEFAULT_ABI* = WIN64
+    else:
+      const DEFAULT_ABI* = GNUW64
   else:
     const DEFAULT_ABI* = UNIX64
+    const EFI64* = WIN64
+elif defined(i386) or defined(x86):
+  when defined(windows):
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, SYSV, STDCALL, THISCALL, FASTCALL, MS_CDECL, PASCAL, REGISTER, LAST_ABI
+  else:
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, SYSV, THISCALL = 3, FASTCALL, STDCALL, PASCAL, REGISTER, MS_CDECL, LAST_ABI
+  when defined(windows):
+    const DEFAULT_ABI* = MS_CDECL
+  else:
+    const DEFAULT_ABI* = SYSV
+elif defined(arm64):
+  type
+    TABI* {.size: sizeof(cint).} = enum
+      FIRST_ABI, SYSV, WIN64, LAST_ABI
+  when defined(windows):
+    const DEFAULT_ABI* = WIN64
+  else:
+    const DEFAULT_ABI* = SYSV
+elif arm32:
+  type
+    TABI* {.size: sizeof(cint).} = enum
+      FIRST_ABI, SYSV, FFI_VFP, LAST_ABI
+  when defined(windows) or defined(arm_pcs_vfp):
+    const DEFAULT_ABI* = FFI_VFP
+  else:
+    const DEFAULT_ABI* = SYSV
+else:
+  {.error: "libffi: nim's libffi currently doesn't support this CPU for ffi_abi".}
 
 const
   tkVOID* = 0
