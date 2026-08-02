@@ -109,6 +109,14 @@ type
     rtype*: ptr Type
     bytes*: cuint
     flags*: cuint
+    when defined(arm64) and (defined(macosx) or defined(ios)):
+      aarch64_nfixedargs: cuint
+    elif defined(arm64) and defined(windows):
+      is_variadic: cuint
+    elif arm32:
+      vfp_used: cint
+      vfp_reg_free, vfp_nargs: cushort
+      vfp_args: array[16, int8] # signed char
 {.deprecated: [Tstatus: Status].}
 
 type
