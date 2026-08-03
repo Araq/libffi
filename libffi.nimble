@@ -5,7 +5,7 @@ description   = "libffi wrapper for Nim."
 license       = "MIT"
 
 when defined(windows):
-  installExt     = @["nim", "c", "h", "s"]
+  installExt     = @["nim", "c", "h", "s", "dll"]
 
 # Dependencies
 requires "nim >= 0.10.0"

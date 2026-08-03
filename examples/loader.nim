@@ -1,15 +1,24 @@
-# Compile with: nim c --passl:-rdynamic -r loader.nim
-import os
-import dynlib
-import libffi
+# Compile and run after compiling ./plugin.nim
 when defined(linux):
+  {.passl: "-rdynamic".}
+
+import std/os
+import std/dynlib
+import libffi
+
+when defined(linux) or defined(macosx):
   proc dlerror(): cstring {.importc.}
 else:
   proc dlerror(): string = "Unknown error"
 
-echo "Trying to load the library at: " & $(getAppDir() / "libplugin.so")
+const libPath = currentSourcePath() /../ (
+    when defined(windows): "plugin.dll"
+    elif defined(macosx): "libplugin.dylib"
+    else: "libplugin.so"
+)
+echo "Trying to load the library at: " & libPath
 # First let's load a library to find procedures in
-var dll = loadLib($(getAppDir() / "libplugin.so"), false)
+var dll = loadLib(libPath, false)
 if dll == nil:
   echo "Something went wrong with loading the plugin:\n" & $dlerror()
   quit 1

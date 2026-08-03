@@ -1,4 +1,4 @@
-# Compile with: nim c --noMain --app:lib plugin.nim
+# Compile with: nim c --app:lib plugin.nim
 proc hello(x: int32) {.cdecl, exportc, dynlib.} =
   echo "Hello world, ", x
 
@@ -6,5 +6,5 @@ proc highFive(): int32 {.cdecl, exportc, dynlib.} =
   result = 5
   echo "Here you go!"
 
-proc helloFancy(f: proc (n: int32): int32 {.cdecl.}) {.exportc.} =
+proc helloFancy(f: proc (n: int32): int32 {.cdecl.}) {.exportc, dynlib.} =
   echo "Such fancyness, ", f(42)

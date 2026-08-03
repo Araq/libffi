@@ -7,7 +7,7 @@
 #    distribution, for details about the copyright.
 #
 
-{.deadCodeElim: on.}
+
 when defined(nimHasStyleChecks):
   {.push styleChecks: off.}
 
@@ -31,27 +31,55 @@ type
   Arg* = int
   SArg* = int
 {.deprecated: [TArg: Arg, TSArg: SArg].}
-
-when defined(windows) and defined(x86):
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, SYSV, STDCALL
-
-  const DEFAULT_ABI* = SYSV
-elif defined(amd64) and defined(windows):
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, WIN64
-  const DEFAULT_ABI* = WIN64
-else:
-  type
-    TABI* {.size: sizeof(cint).} = enum
-      FIRST_ABI, SYSV, UNIX64
-
-  when defined(i386):
-    const DEFAULT_ABI* = SYSV
+template arm32: bool = hostCPU == "arm"
+when defined(amd64):
+  when defined(windows):
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, WIN64, GNUW64, LAST_ABI
+  else:
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI = 1, UNIX64, WIN64, GNUW64, LAST_ABI
+  when defined(windows):
+    when defined(vcc):
+      const DEFAULT_ABI* = WIN64
+    else:
+      const DEFAULT_ABI* = GNUW64
   else:
     const DEFAULT_ABI* = UNIX64
+    const EFI64* = WIN64
+elif defined(i386) or defined(x86):
+  when defined(windows):
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, SYSV, STDCALL, THISCALL, FASTCALL, MS_CDECL, PASCAL, REGISTER, LAST_ABI
+  else:
+    type
+      TABI* {.size: sizeof(cint).} = enum
+        FIRST_ABI, SYSV, THISCALL = 3, FASTCALL, STDCALL, PASCAL, REGISTER, MS_CDECL, LAST_ABI
+  when defined(windows):
+    const DEFAULT_ABI* = MS_CDECL
+  else:
+    const DEFAULT_ABI* = SYSV
+elif defined(arm64):
+  type
+    TABI* {.size: sizeof(cint).} = enum
+      FIRST_ABI, SYSV, WIN64, LAST_ABI
+  when defined(windows):
+    const DEFAULT_ABI* = WIN64
+  else:
+    const DEFAULT_ABI* = SYSV
+elif arm32:
+  type
+    TABI* {.size: sizeof(cint).} = enum
+      FIRST_ABI, SYSV, FFI_VFP, LAST_ABI
+  when defined(windows) or defined(arm_pcs_vfp):
+    const DEFAULT_ABI* = FFI_VFP
+  else:
+    const DEFAULT_ABI* = SYSV
+else:
+  {.error: "libffi: nim's libffi currently doesn't support this CPU for ffi_abi".}
 
 const
   tkVOID* = 0
@@ -96,7 +124,7 @@ var
   type_float* {.importc: "ffi_type_float", mylib.}: Type
   type_double* {.importc: "ffi_type_double", mylib.}: Type
   type_pointer* {.importc: "ffi_type_pointer", mylib.}: Type
-  type_longdouble* {.importc: "ffi_type_double", mylib.}: Type
+  type_longdouble* {.importc: "ffi_type_longdouble", mylib.}: Type
 
 type
   Status* {.size: sizeof(cint).} = enum
@@ -109,6 +137,14 @@ type
     rtype*: ptr Type
     bytes*: cuint
     flags*: cuint
+    when defined(arm64) and (defined(macosx) or defined(ios)):
+      aarch64_nfixedargs: cuint
+    elif defined(arm64) and defined(windows):
+      is_variadic: cuint
+    elif arm32:
+      vfp_used: cint
+      vfp_reg_free, vfp_nargs: cushort
+      vfp_args: array[16, int8] # signed char
 {.deprecated: [Tstatus: Status].}
 
 type
@@ -142,20 +178,36 @@ proc prep_cif*(cif: var TCif; abi: TABI; nargs: cuint; rtype: ptr Type;
 proc call*(cif: var TCif; fn, rvalue: pointer;
            avalue: ArgList) {.cdecl, importc: "ffi_call", mylib.}
 
+template macOr[T](a, b: T): T =
+  when defined(macosx):
+    a
+  else:
+    b
 
-when defined(x8664):
-  const TRAMPOLINE_SIZE = 24
-elif defined(windows) and defined(x86):
-  const TRAMPOLINE_SIZE = 52
-elif defined(amd64) and defined(windows):
-  const TRAMPOLINE_SIZE = 29
+const TRAMPOLINE_SIZE = case hostCPU
+of "amd64": 24
+of "i386": 12
+of "arm":
+  macOr 12, 16
+elif defined(arm64):
+  macOr 16, 24
 else:
-  const TRAMPOLINE_SIZE = 10
+  -1  # unsupported
 
 type
   ClosureProc = proc (cif: var TCif, ret: pointer, args: UncheckedArray[pointer], user_data: pointer) {.cdecl.}
+
+when defined(arm) or defined(arm64):
+  #[ This means follows.
+        trampoline_table: pointer                         trampoline_table_entry: pointer
+  ]#
+  type Tramp = array[2, pointer]
+else:
+  type Tramp = array[0..TRAMPOLINE_SIZE, uint8]
+
+type
   Closure* {.pure, final.} = object
-    tramp: array[0..TRAMPOLINE_SIZE, uint8]
+    tramp: Tramp
     cif: ptr TCif
     fun: ClosureProc
     user_data: pointer
