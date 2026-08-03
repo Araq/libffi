@@ -124,7 +124,16 @@ var
   type_float* {.importc: "ffi_type_float", mylib.}: Type
   type_double* {.importc: "ffi_type_double", mylib.}: Type
   type_pointer* {.importc: "ffi_type_pointer", mylib.}: Type
-  type_longdouble* {.importc: "ffi_type_longdouble", mylib.}: Type
+
+const LongDoubleCSym =
+  when defined(macosx):
+    # MacOS still uses old libffi (before 3.7.1)
+    #   as of 2026
+    "ffi_type_double"
+  else:
+    "ffi_type_longdouble"
+var
+  type_longdouble* {.importc: LongDoubleCSym, mylib.}: Type
 
 type
   Status* {.size: sizeof(cint).} = enum
