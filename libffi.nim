@@ -185,10 +185,11 @@ template macOr[T](a, b: T): T =
     b
 
 const TRAMPOLINE_SIZE = case hostCPU
-of "amd64": 24
-of "i386": 12
+of "amd64": 32
+of "i386": 16
 of "arm":
-  macOr 12, 16
+  when defined(windows): 16
+  else: 12
 elif defined(arm64):
   macOr 16, 24
 else:
@@ -197,13 +198,14 @@ else:
 type
   ClosureProc = proc (cif: var TCif, ret: pointer, args: UncheckedArray[pointer], user_data: pointer) {.cdecl.}
 
-when defined(arm) or defined(arm64):
+when (defined(arm) or defined(arm64)) and (defined(macosx) or defined(ios)):
   #[ This means follows.
-        trampoline_table: pointer                         trampoline_table_entry: pointer
+        trampoline_table: pointer
+        trampoline_table_entry: pointer
   ]#
   type Tramp = array[2, pointer]
 else:
-  type Tramp = array[0..TRAMPOLINE_SIZE, uint8]
+  type Tramp = array[TRAMPOLINE_SIZE, uint8]
 
 type
   Closure* {.pure, final.} = object
