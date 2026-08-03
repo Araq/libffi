@@ -124,7 +124,7 @@ var
   type_float* {.importc: "ffi_type_float", mylib.}: Type
   type_double* {.importc: "ffi_type_double", mylib.}: Type
   type_pointer* {.importc: "ffi_type_pointer", mylib.}: Type
-  type_longdouble* {.importc: "ffi_type_double", mylib.}: Type
+  type_longdouble* {.importc: "ffi_type_longdouble", mylib.}: Type
 
 type
   Status* {.size: sizeof(cint).} = enum
